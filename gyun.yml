@@ -12,7 +12,7 @@ services:
     ports:
       - 9200:9200
     networks:
-      - gyun-bridge  
+      - gyun-bridge
     deploy:
       mode: global
       placement:
@@ -30,7 +30,7 @@ services:
     depends_on:
       - es
     networks:
-      - gyun-bridge 
+      - gyun-bridge
     deploy:
       mode: global
       placement:
@@ -56,11 +56,8 @@ services:
       replicas: 2
       placement:
         constraints: [node.labels.app == web]
-
     networks:
       - gyun-bridge
-
-
 
   db:
     image: mariadb
@@ -72,20 +69,58 @@ services:
     restart: always
     networks:
       - gyun-bridge
-
     deploy:
       mode: replicated
       replicas: 1
       placement:
         constraints: [node.labels.app == db]
 
+  metricbeat:
+    image: docker.elastic.co/beats/metricbeat:7.17.7
+    user: root
+    deploy:
+      replicas: 3
+      placement:
+        constraints: [node.labels.app == web]
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - ELASTICSEARCH_HOST=es
+      - KIBANA_HOST=kibana
+      - ELASTICSEARCH_USERNAME=elastic
+      - ELASTICSEARCH_PASSWORD=changeme
+    networks:
+      - gyun-bridge
+    configs:
+      - source: mb_config
+        target: /usr/share/metricbeat/metricbeat.yml
 
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:7.17.7
+    user: root
+    deploy:
+      replicas: 3
+      placement:
+        constraints: [node.labels.app == web]
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - gyun-bridge
+        #configs:
+        #- source: fb_config
+        #target: /usr/share/filebeat/filebeat.yml
 
 volumes:
   data:
     driver: local
 
 networks:
-  gyun-bridge:  
-    driver: overlay  
+  gyun-bridge:
+    driver: overlay
+
+configs:
+  mb_config:
+    file: /home/user1/project_docker/metricbeat.yml
+    # fb_config:
+    #file: /home/user1/project_docker/filebeat.yml
 
