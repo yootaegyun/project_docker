@@ -1,1 +1,7 @@
-test1
+name: first test
+on: push
+jobs: 
+  echo:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo 'hello, my name is taegyun'
